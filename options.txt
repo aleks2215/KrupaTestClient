@@ -1,0 +1,4 @@
+#Client options
+#Fri Nov 13 14:58:52 MSK 2020
+IP=192.168.1.61
+Port=4567
