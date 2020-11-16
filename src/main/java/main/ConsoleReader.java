@@ -1,12 +1,12 @@
 package main;
 
 import java.util.Scanner;
-
 import network.ClientSocket;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import settings.Settings;
 import settings.Settings.SettingsTypes;
+import settings.SettingsChecker;
 import xml.XmlReader;
 
 public class ConsoleReader {
@@ -18,18 +18,52 @@ public class ConsoleReader {
     String ip;
     int port;
 
-    log.log(Level.INFO,"Запущен клиент программы для передачи данных серверу из xml файла");
+    log.log(Level.INFO, "Запущен клиент программы для передачи данных серверу из xml файла");
 
     try (Scanner scanner = new Scanner(System.in)) {
 
-      if (!checkSettingsExists()) {
-        System.exit(0);
+      SettingsChecker settingsChecker = new SettingsChecker();
+
+      if (!settingsChecker.checkIP(settings.getProperty(SettingsTypes.IP))) {
+        log.log(Level.WARN,"Не удалось прочитать корректный ip адрес из файла options.txt");
+        while (true) {
+          System.out.println("Введите корректный ip:");
+          String string = scanner.nextLine();
+
+          if (string.equals("exit")) {
+            System.exit(0);
+          }
+
+          if (settingsChecker.checkIP(string)) {
+            ip = string;
+            settings.setProperty(SettingsTypes.IP,ip);
+            settings.save();
+            break;
+          }
+        }
+      } else {
+        ip = settings.getProperty(SettingsTypes.IP);
       }
 
-      ip = settings.getStringProperty(SettingsTypes.IP);
-      port = settings.getIntProperty(SettingsTypes.PORT);
-      if (port < 0) {
-        System.exit(0);
+      if (!settingsChecker.checkPort(settings.getProperty(SettingsTypes.PORT))) {
+        log.log(Level.WARN,"Не удалось прочитать корректный порт из файла options.txt");
+        while (true) {
+          System.out.println("Введите корректный порт:");
+          String string = scanner.nextLine();
+
+          if (string.equals("exit")) {
+            System.exit(0);
+          }
+
+          if (settingsChecker.checkPort(string)) {
+            port = Integer.parseInt(string);
+            settings.setProperty(SettingsTypes.PORT, String.valueOf(port));
+            settings.save();
+            break;
+          }
+        }
+      } else {
+        port = Integer.parseInt(settings.getProperty(SettingsTypes.PORT));
       }
 
       XmlReader xmlReader = new XmlReader(scanner);
@@ -39,17 +73,6 @@ public class ConsoleReader {
 
       clientSocket.connectAndSendXMLToServer();
     }
-  }
-
-  private static boolean checkSettingsExists() {
-    if (settings.getStringProperty(SettingsTypes.IP).equals("") ||
-        settings.getIntProperty(SettingsTypes.PORT) == 0) {
-      log.log(Level.ERROR, "Не удалось обнаружить информацию для подключения к серверу.");
-      System.out.println("Укажите в файле настроек options.txt IP и Port для подключения "
-          + "и перезапустите программу");
-      return false;
-    }
-    return true;
   }
 }
 

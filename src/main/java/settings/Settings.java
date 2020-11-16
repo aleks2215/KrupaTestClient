@@ -13,6 +13,7 @@ public class Settings {
 
   private static Logger log = Logger.getLogger(Settings.class.getName());
   private static Settings settings;
+  private File propFile;
   private Properties properties;
 
   private Settings() {
@@ -31,7 +32,7 @@ public class Settings {
     properties = new Properties();
     try {
       String propPath = System.getProperty("user.dir") + "\\options.txt";
-      File propFile = new File(propPath);
+      propFile = new File(propPath);
       if (!propFile.exists()) {
         propFile.createNewFile();
         properties.setProperty(SettingsTypes.PORT.getName(), "4567");
@@ -47,27 +48,27 @@ public class Settings {
     }
   }
 
-  public String getStringProperty(SettingsTypes type) {
+  public String getProperty(SettingsTypes type) {
     String result = null;
     if (type == SettingsTypes.IP) {
-      result = properties.getProperty(SettingsTypes.IP.getName(), "");
+      result = properties.getProperty(SettingsTypes.IP.getName());
+    } else if (type == SettingsTypes.PORT) {
+      result = properties.getProperty(SettingsTypes.PORT.getName());
     }
     return result;
   }
 
-  public int getIntProperty(SettingsTypes type) {
-    int result = 0;
-    if (type == SettingsTypes.PORT) {
-      try {
-        result = Integer.parseInt(properties.getProperty(SettingsTypes.PORT.getName(), "0"));
-      } catch (NumberFormatException e) {
-        log.log(Level.ERROR, "Порт указан некорректно", e);
-        System.out.println("Укажите в файле настроек options.txt корректное значение Port"
-            + " и перезапустите программу");
-        System.exit(0);
-      }
+  public void setProperty(SettingsTypes type, String value) {
+    properties.setProperty(type.getName(), value);
+  }
+
+  public void save() {
+    try (FileWriter fileWriter = new FileWriter(propFile)) {
+      properties.store(fileWriter, "Client options");
+      log.log(Level.INFO, "Настройки успешно сохранены");
+    } catch (IOException e) {
+      log.log(Level.WARN, "Ошибка при сохранении настроек в файл", e);
     }
-    return result;
   }
 
   public enum SettingsTypes {
